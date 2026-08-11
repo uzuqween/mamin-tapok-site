@@ -89,6 +89,10 @@
         v.wire = !v.wire;
         b.setAttribute('aria-pressed', String(v.wire));
         v.draw();
+      } else if (act === 'obj') {
+        var was = b.textContent;
+        b.textContent = v.download();
+        setTimeout(function () { b.textContent = was; }, 1600);
       } else {
         v.yaw = -0.6; v.pitch = -0.35; v.vy = 0; v.vp = 0;
         v.draw();
@@ -116,13 +120,14 @@
     pv.muted = true;
     var pc = peek.querySelector('.peek__cap');
     var hoverable = window.matchMedia('(hover:hover)').matches;
-    var tx = 0, ty = 0, cx = 0, cy = 0, on = false, raf = 0, hideT = 0;
+    var tx = 0, ty = 0, cx = 0, cy = 0, on = false, raf = 0, hideT = 0, showT = 0;
     /* видео ещё не залито — рамку просто не показываем */
     pv.addEventListener('error', function () { peek.classList.remove('is-on'); });
 
     function place() {
-      cx += (tx - cx) * 0.22;
-      cy += (ty - cy) * 0.22;
+      /* мягче, чем было: рамка отстаёт от курсора и не дёргается */
+      cx += (tx - cx) * 0.12;
+      cy += (ty - cy) * 0.12;
       peek.style.transform = 'translate3d(' + Math.round(cx) + 'px,' + Math.round(cy) + 'px,0)';
       if (on || Math.abs(tx - cx) > 0.5 || Math.abs(ty - cy) > 0.5) {
         raf = requestAnimationFrame(place);
@@ -150,17 +155,24 @@
           pc.textContent = card.dataset.vcap || '';
           on = true;
           follow(e);
-          peek.classList.add('is-on');
-          var p = pv.play();
-          if (p && p.catch) p.catch(function () {});
+          /* пауза перед показом: курсор, который просто проехал по карточке,
+             рамку не вызывает — она всплывает только на осознанном наведении */
+          clearTimeout(showT);
+          showT = setTimeout(function () {
+            if (!on) return;
+            peek.classList.add('is-on');
+            var p = pv.play();
+            if (p && p.catch) p.catch(function () {});
+          }, 380);
         });
         card.addEventListener('pointermove', follow);
         card.addEventListener('pointerleave', function () {
           on = false;
+          clearTimeout(showT);
           peek.classList.remove('is-on');
           /* пауза только когда затухание доиграло */
           clearTimeout(hideT);
-          hideT = setTimeout(function () { pv.pause(); }, 3000);
+          hideT = setTimeout(function () { pv.pause(); }, 600);
         });
         return;
       }
@@ -190,6 +202,50 @@
       });
     });
   }
+
+  /* --- светлячки: у каждого свой путь, размер и ритм мерцания --- */
+  (function () {
+    var box = document.createElement('div');
+    box.className = 'flies';
+    box.setAttribute('aria-hidden', 'true');
+    var narrow = window.matchMedia('(max-width:900px)').matches;
+    var r = function (a, b) { return a + Math.random() * (b - a); };
+    /* высота тёмной полосы фона — та же формула, что в CSS у html */
+    var band = Math.min(940, Math.max(560, window.innerHeight * 0.92));
+    var docH = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+    /* плотность на экран, а не фиксированное число: длинная страница
+       не остаётся с пустым низом */
+    var n = Math.round((narrow ? 20 : 34) * docH / window.innerHeight);
+    for (var i = 0; i < n; i++) {
+      var f = document.createElement('span');
+      f.className = 'fly';
+      var s = r(1.6, 4.6);
+      var dx = r(-130, 130), dy = r(-110, 110);
+      var y = r(-20, docH);
+      /* доля белого: над полосой — целиком белая точка, ниже — целиком чёрная */
+      var wht = Math.round(100 * (1 - Math.min(1, Math.max(0, y / band))));
+      f.style.setProperty('--x', r(-2, 100) + 'vw');
+      f.style.setProperty('--y', y.toFixed(0) + 'px');
+      f.style.setProperty('--c',
+        'color-mix(in srgb,var(--paper-base) ' + wht + '%,var(--ink-base))');
+      f.style.setProperty('--s', s.toFixed(2) + 'px');
+      /* крупные светятся ярче мелких — рой получает глубину */
+      f.style.setProperty('--o', (0.42 + (s - 1.6) / 3 * 0.53).toFixed(2));
+      f.style.setProperty('--dx', dx.toFixed(0) + 'px');
+      f.style.setProperty('--dy', dy.toFixed(0) + 'px');
+      /* серединная точка пути сбита в сторону от прямой — траектория кривая */
+      f.style.setProperty('--mx', (dx * r(0.1, 0.55) + r(-46, 46)).toFixed(0) + 'px');
+      f.style.setProperty('--my', (dy * r(0.1, 0.55) + r(-40, 40)).toFixed(0) + 'px');
+      f.style.setProperty('--d', r(11, 30).toFixed(1) + 's');    // путь
+      f.style.setProperty('--p', r(2.6, 7.5).toFixed(1) + 's');  // дыхание размера
+      f.style.setProperty('--g', r(2.4, 8).toFixed(1) + 's');    // вспышка
+      f.style.setProperty('--dd', (-r(0, 30)).toFixed(1) + 's');
+      f.style.setProperty('--pd', (-r(0, 8)).toFixed(1) + 's');
+      f.style.setProperty('--gd', (-r(0, 8)).toFixed(1) + 's');
+      box.appendChild(f);
+    }
+    document.body.appendChild(box);
+  })();
 
   /* --- появление блоков --- */
   if (window.IntersectionObserver) {

@@ -168,9 +168,9 @@
     this.h = 0;
 
     this.px = parseFloat(stage.dataset.px || '3');   // размер «пикселя» стилизации
-    /* на телефоне пиксель крупнее: вчетверо меньше расчёта на кадр,
-       рисунок при этом только выигрывает в характере */
-    if (window.matchMedia('(max-width:900px)').matches) this.px = this.px * 1.6;
+    /* на телефоне окно вдвое меньше, поэтому пиксель наоборот мельче —
+       иначе модель рассыпается в кашу и деталей не разобрать */
+    if (window.matchMedia('(max-width:900px)').matches) this.px = this.px * 0.75;
     this.buf = document.createElement('canvas');
     this.bctx = this.buf.getContext('2d');
     this.blur = 0;                                    // текущая смазанность
@@ -184,9 +184,49 @@
   }
 
   Viewer.prototype.readColors = function () {
-    var cs = getComputedStyle(document.documentElement);
+    /* цвета берём с самой сцены, а не с корня: блок на чёрном фоне
+       меняет чернила и бумагу местами, и модель должна повернуться вместе с ним */
+    var cs = getComputedStyle(this.stage);
     this.ink = rgb(cs.getPropertyValue('--ink'));
     this.paper = rgb(cs.getPropertyValue('--paper'));
+  };
+
+  /* ---- выгрузка в .obj ----
+     геометрия та же, что на экране: 8 вершин и 6 четырёхугольников на куб,
+     обход граней взят из FACES, поэтому нормали снаружи. единицы — воксели,
+     как в редакторе; делить на 16 под блок Minecraft здесь незачем. */
+  Viewer.prototype.toOBJ = function () {
+    var m = this.model;
+    var out = ['# ' + m.name, '# ' + m.cubes.length + ' cubes', 'o ' + (this.stage.dataset.model || 'model')];
+    var base = 0;
+    m.cubes.forEach(function (c) {
+      var x = c[0], y = c[1], z = c[2], w = c[3], h = c[4], d = c[5];
+      var v = [
+        [x, y, z], [x + w, y, z], [x + w, y + h, z], [x, y + h, z],
+        [x, y, z + d], [x + w, y, z + d], [x + w, y + h, z + d], [x, y + h, z + d]
+      ];
+      v.forEach(function (p) {
+        out.push('v ' + p[0] + ' ' + p[1] + ' ' + p[2]);
+      });
+      FACES.forEach(function (f) {
+        out.push('f ' + f[0].map(function (i) { return base + i + 1; }).join(' '));
+      });
+      base += 8;
+    });
+    return out.join('\n') + '\n';
+  };
+
+  Viewer.prototype.download = function () {
+    var name = (this.stage.dataset.model || 'model') + '.obj';
+    var url = URL.createObjectURL(new Blob([this.toOBJ()], { type: 'text/plain' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    return name;
   };
 
   Viewer.prototype.load = function (key) {
@@ -316,7 +356,7 @@
       this.vp *= 0.92;
       moved = true;
     }
-    if (this.blur > 0.05) moved = true;      // догашиваем шлейф
+    if (this.blur > 0.02) moved = true;      // догашиваем шлейф
     if (moved && this.visible) this.draw();
   };
 
@@ -326,7 +366,7 @@
     var spd = Math.abs(this.yaw - this.lastYaw) + Math.abs(this.pitch - this.lastPitch);
     this.lastYaw = this.yaw;
     this.lastPitch = this.pitch;
-    this.blur = this.reduced ? 0 : Math.max(this.blur * 0.72, Math.min(1, spd * 26));
+    this.blur = this.reduced ? 0 : Math.max(this.blur * 0.84, Math.min(1, spd * 40));
 
     var bw = this.bw, bh = this.bh;
     var fr = this.fr, zb = this.zb, acc = this.acc;
@@ -413,8 +453,8 @@
     });
 
     /* смаз: гасим прошлый кадр и накладываем новый сверху */
-    if (this.blur > 0.05) {
-      var keep = 0.66 - 0.5 * (1 - this.blur);
+    if (this.blur > 0.02) {
+      var keep = 0.88 - 0.34 * (1 - this.blur);
       for (var p = 0; p < n2; p++) {
         var o = p * 4;
         if (fr[o + 3]) {

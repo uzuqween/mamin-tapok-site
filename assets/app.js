@@ -45,6 +45,13 @@
   /* --- вьюпорты --- */
   window.Voxel.init();
 
+  /* на тач-экране крутят пальцем — подсказка должна говорить об этом */
+  if (!window.matchMedia('(hover:hover)').matches) {
+    document.querySelectorAll('.stage__hint').forEach(function (h) {
+      h.textContent = 'ведите пальцем';
+    });
+  }
+
   /* --- список моделей в большом окне --- */
   var list = document.querySelector('.viewer__list');
   var big = document.getElementById('bigStage');
@@ -158,8 +165,17 @@
         return;
       }
 
+      /* телефон: подпись-подсказка, что под карточкой лежит запись работы */
+      var hint = document.createElement('span');
+      hint.className = 'card__play';
+      hint.textContent = 'смотреть работу';
+      var body = card.querySelector('.card__body');
+      if (body) body.appendChild(hint);
+
       /* телефон: тап по карточке разворачивает видео вместо модели */
-      card.addEventListener('click', function () {
+      card.addEventListener('click', function (e) {
+        /* по самой модели пальцем крутят — видео тут не открываем */
+        if (e.target.closest('.stage') && !card.classList.contains('is-play')) return;
         var v = card.querySelector('.card__vid');
         if (!v) {
           v = document.createElement('video');
@@ -169,6 +185,7 @@
           card.insertBefore(v, card.firstChild);
         }
         card.classList.toggle('is-play');
+        hint.textContent = card.classList.contains('is-play') ? 'вернуть модель' : 'смотреть работу';
         if (card.classList.contains('is-play')) v.play(); else v.pause();
       });
     });

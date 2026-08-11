@@ -168,6 +168,9 @@
     this.h = 0;
 
     this.px = parseFloat(stage.dataset.px || '3');   // размер «пикселя» стилизации
+    /* на телефоне пиксель крупнее: вчетверо меньше расчёта на кадр,
+       рисунок при этом только выигрывает в характере */
+    if (window.matchMedia('(max-width:900px)').matches) this.px = this.px * 1.6;
     this.buf = document.createElement('canvas');
     this.bctx = this.buf.getContext('2d');
     this.blur = 0;                                    // текущая смазанность

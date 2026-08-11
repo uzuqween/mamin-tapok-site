@@ -245,6 +245,14 @@ section{max-width:var(--max);margin:0 auto;padding:clamp(46px,7vw,96px) var(--pa
   border-bottom:1px solid var(--ink);
 }
 .card.is-play .stage--card{display:none}
+/* телефон: подпись «смотреть работу» — единственный способ узнать про запись,
+   рамки у курсора там нет */
+.card__play{
+  display:inline-block;margin-top:14px;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
+  border-bottom:1px solid var(--line);padding-bottom:2px;
+}
+.card__play::before{content:"▶ ";font-size:9px}
 @media (hover:none){
   .peek{display:none}
 }
@@ -275,15 +283,37 @@ section{max-width:var(--max);margin:0 auto;padding:clamp(46px,7vw,96px) var(--pa
   .hero__stage{order:-1}
   .stage{aspect-ratio:4/3}
   .viewer__box{grid-template-columns:1fr}
-  .viewer__list{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--ink)}
-  .viewer__list button{border-bottom:0;border-right:1px solid var(--line);white-space:nowrap}
-  .stage--big{min-height:56vh}
+  /* список моделей не прокручивается: раскладываем плитками по ширине,
+     чтобы все пять были видны сразу */
+  .viewer__list{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));
+    overflow:visible;border-right:0;border-bottom:1px solid var(--ink);
+  }
+  .viewer__list button{
+    display:block;text-align:center;padding:11px 8px;
+    border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+    font-size:13px;letter-spacing:.04em;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .viewer__list button span{display:none}
+  /* большому окну пропорция не нужна — высоту задаёт min-height,
+     иначе 4/3 растягивает его шире экрана и страница ползёт боком */
+  .stage--big{aspect-ratio:auto;min-height:56vh}
+  /* окно в карточке ниже — иначе страница на телефоне тянется на пять экранов */
+  .stage--card{aspect-ratio:16/10}
+  .card__body{padding:16px}
 }
 @media (max-width:560px){
   body{font-size:16px}
   .nav{font-size:14px;gap:12px}
   .invert{padding:6px 8px}
   .hero h1{font-size:clamp(38px,12vw,60px)}
+  /* шапка в одну строку: «Услуги mamin_tapok» иначе ломается на две */
+  .bar{gap:10px;padding:12px var(--pad)}
+  .mark{font-size:14px;white-space:nowrap}
+  .mark__cube{width:18px;height:18px}
+  .nav{font-size:13px;gap:10px}
+  .stage__hint{letter-spacing:.08em;font-size:10px;left:12px;text-align:right}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}

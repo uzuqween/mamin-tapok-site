@@ -1,0 +1,4 @@
+# исходники, на сервер не нужны
+blender/
+assets/video/raw/
+dist/

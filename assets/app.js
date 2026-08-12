@@ -77,29 +77,6 @@
     });
   }
 
-  /* --- кнопки большого окна --- */
-  document.querySelectorAll('.stage__tools button').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var v = b.closest('.stage').__voxel;
-      var act = b.dataset.act;
-      if (act === 'spin') {
-        v.spinOn = !v.spinOn;
-        b.setAttribute('aria-pressed', String(v.spinOn));
-      } else if (act === 'wire') {
-        v.wire = !v.wire;
-        b.setAttribute('aria-pressed', String(v.wire));
-        v.draw();
-      } else if (act === 'obj') {
-        var was = b.textContent;
-        b.textContent = v.download();
-        setTimeout(function () { b.textContent = was; }, 1600);
-      } else {
-        v.yaw = -0.6; v.pitch = -0.35; v.vy = 0; v.vp = 0;
-        v.draw();
-      }
-    });
-  });
-
   /* --- копирование ника --- */
   document.querySelectorAll('.copy').forEach(function (b) {
     b.addEventListener('click', function () {

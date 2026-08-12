@@ -195,44 +195,6 @@
     this.paper = rgb(cs.getPropertyValue('--paper'));
   };
 
-  /* ---- выгрузка в .obj ----
-     геометрия та же, что на экране: 8 вершин и 6 четырёхугольников на куб,
-     обход граней взят из FACES, поэтому нормали снаружи. единицы — воксели,
-     как в редакторе; делить на 16 под блок Minecraft здесь незачем. */
-  Viewer.prototype.toOBJ = function () {
-    var m = this.model;
-    var out = ['# ' + m.name, '# ' + m.cubes.length + ' cubes', 'o ' + (this.stage.dataset.model || 'model')];
-    var base = 0;
-    m.cubes.forEach(function (c) {
-      var x = c[0], y = c[1], z = c[2], w = c[3], h = c[4], d = c[5];
-      var v = [
-        [x, y, z], [x + w, y, z], [x + w, y + h, z], [x, y + h, z],
-        [x, y, z + d], [x + w, y, z + d], [x + w, y + h, z + d], [x, y + h, z + d]
-      ];
-      v.forEach(function (p) {
-        out.push('v ' + p[0] + ' ' + p[1] + ' ' + p[2]);
-      });
-      FACES.forEach(function (f) {
-        out.push('f ' + f[0].map(function (i) { return base + i + 1; }).join(' '));
-      });
-      base += 8;
-    });
-    return out.join('\n') + '\n';
-  };
-
-  Viewer.prototype.download = function () {
-    var name = (this.stage.dataset.model || 'model') + '.obj';
-    var url = URL.createObjectURL(new Blob([this.toOBJ()], { type: 'text/plain' }));
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    return name;
-  };
-
   Viewer.prototype.load = function (key) {
     var model = window.MODELS[key] || window.MODELS.cat;
     this.model = model;

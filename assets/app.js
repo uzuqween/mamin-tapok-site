@@ -124,6 +124,17 @@
     /* видео ещё не залито — рамку просто не показываем */
     pv.addEventListener('error', function () { peek.classList.remove('is-on'); });
 
+    /* рамка живёт только пока курсор в сетке работ. быстрая прокрутка уводит
+       карточку из-под курсора без pointerleave, поэтому гасим и по скроллу */
+    function hide() {
+      on = false;
+      clearTimeout(showT);
+      peek.classList.remove('is-on');
+      clearTimeout(hideT);
+      hideT = setTimeout(function () { pv.pause(); }, 600);
+    }
+    window.addEventListener('scroll', function () { if (on) hide(); }, { passive: true });
+
     function place() {
       /* мягче, чем было: рамка отстаёт от курсора и не дёргается */
       cx += (tx - cx) * 0.12;
@@ -166,14 +177,7 @@
           }, 380);
         });
         card.addEventListener('pointermove', follow);
-        card.addEventListener('pointerleave', function () {
-          on = false;
-          clearTimeout(showT);
-          peek.classList.remove('is-on');
-          /* пауза только когда затухание доиграло */
-          clearTimeout(hideT);
-          hideT = setTimeout(function () { pv.pause(); }, 600);
-        });
+        card.addEventListener('pointerleave', hide);
         return;
       }
 
@@ -210,24 +214,19 @@
     box.setAttribute('aria-hidden', 'true');
     var narrow = window.matchMedia('(max-width:900px)').matches;
     var r = function (a, b) { return a + Math.random() * (b - a); };
-    /* высота тёмной полосы фона — та же формула, что в CSS у html */
-    var band = Math.min(940, Math.max(560, window.innerHeight * 0.92));
     var docH = Math.max(document.documentElement.scrollHeight, window.innerHeight);
     /* плотность на экран, а не фиксированное число: длинная страница
-       не остаётся с пустым низом */
-    var n = Math.round((narrow ? 20 : 34) * docH / window.innerHeight);
+       не остаётся с пустым низом. счёт снижен — сотня анимированных точек
+       заметно грела слабые машины, а роя из полусотни хватает */
+    var n = Math.round((narrow ? 9 : 16) * docH / window.innerHeight);
     for (var i = 0; i < n; i++) {
       var f = document.createElement('span');
       f.className = 'fly';
       var s = r(1.6, 4.6);
       var dx = r(-130, 130), dy = r(-110, 110);
       var y = r(-20, docH);
-      /* доля белого: над полосой — целиком белая точка, ниже — целиком чёрная */
-      var wht = Math.round(100 * (1 - Math.min(1, Math.max(0, y / band))));
       f.style.setProperty('--x', r(-2, 100) + 'vw');
       f.style.setProperty('--y', y.toFixed(0) + 'px');
-      f.style.setProperty('--c',
-        'color-mix(in srgb,var(--paper-base) ' + wht + '%,var(--ink-base))');
       f.style.setProperty('--s', s.toFixed(2) + 'px');
       /* крупные светятся ярче мелких — рой получает глубину */
       f.style.setProperty('--o', (0.42 + (s - 1.6) / 3 * 0.53).toFixed(2));

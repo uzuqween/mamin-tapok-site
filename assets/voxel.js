@@ -157,6 +157,10 @@
     this.vp = 0;
     this.spin = parseFloat(stage.dataset.spin || '0.2');
     this.spinOn = true;
+    /* карточки крутятся только под курсором: четыре софтверных растеризатора,
+       работающих одновременно, и грели машину. большое окно — единственное,
+       что вращается само */
+    this.idle = stage.dataset.idle === '1';
     this.wire = false;
     this.dragging = false;
     this.visible = true;
@@ -318,7 +322,11 @@
     this.stage.tabIndex = 0;
 
     var card = this.stage.closest('.card') || this.stage;
-    card.addEventListener('pointerenter', function () { self.hover = true; self.draw(); });
+    card.addEventListener('pointerenter', function () {
+      self.hover = true;
+      if (window.Voxel) window.Voxel.wake();
+      self.draw();
+    });
     card.addEventListener('pointerleave', function () { self.hover = false; self.draw(); });
     this.stage.addEventListener('focus', function () { self.hover = true; self.draw(); });
     this.stage.addEventListener('blur', function () { self.hover = false; self.draw(); });
@@ -331,7 +339,10 @@
     if (window.IntersectionObserver) {
       new IntersectionObserver(function (es) {
         self.visible = es[0].isIntersecting;
-        if (self.visible) self.started = true;
+        if (self.visible) {
+          self.started = true;
+          if (window.Voxel) window.Voxel.wake();   // цикл мог уснуть
+        }
       }, { rootMargin: '80px' }).observe(this.stage);
     } else {
       this.started = true;
@@ -345,7 +356,10 @@
       else if (this.started) this.build = Math.min(1, this.build + dt / 1.1);
       moved = true;
     }
-    if (this.spinOn && !this.dragging && this.visible) {
+    if (this.spinOn && !this.idle && !this.dragging && this.visible) {
+      this.yaw += this.spin * dt;
+      moved = true;
+    } else if (this.idle && this.hover && !this.dragging && this.visible) {
       this.yaw += this.spin * dt;
       moved = true;
     }
@@ -481,15 +495,43 @@
     }
   };
 
-  /* ---- общий цикл на все вьюпорты ---- */
+  /* ---- общий цикл на все вьюпорты ----
+     кадры ограничены 30 в секунду: растеризатор софтверный, и разница между 30
+     и 60 на глаз почти незаметна, а нагрузка вдвое. когда ни одна сцена не в
+     кадре (или вкладка скрыта), цикл останавливается совсем и его будит
+     IntersectionObserver — раньше он молотил всегда. */
   var viewers = [];
   var prev = 0;
+  var running = false;
+  var FRAME = 1000 / 30;
+  var lastFrame = 0;
+
   function loop(ts) {
+    if (document.hidden) { running = false; prev = 0; return; }
+    if (ts - lastFrame < FRAME) { requestAnimationFrame(loop); return; }
     var dt = prev ? Math.min((ts - prev) / 1000, 0.05) : 0;
     prev = ts;
-    for (var i = 0; i < viewers.length; i++) viewers[i].tick(dt);
+    lastFrame = ts;
+    var live = false;
+    for (var i = 0; i < viewers.length; i++) {
+      var v = viewers[i];
+      if (v.visible) live = true;
+      v.tick(dt);
+    }
+    if (!live) { running = false; prev = 0; return; }   // всё за экраном — спим
     requestAnimationFrame(loop);
   }
+
+  function kick() {
+    if (running) return;
+    running = true;
+    prev = 0;
+    lastFrame = 0;
+    requestAnimationFrame(loop);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) kick();
+  });
 
   window.Voxel = {
     init: function (root) {
@@ -499,9 +541,10 @@
         s.__voxel = v;
         viewers.push(v);
       });
-      if (viewers.length && !prev) requestAnimationFrame(loop);
+      if (viewers.length) kick();
       return viewers;
     },
+    wake: kick,
     refreshColors: function () {
       viewers.forEach(function (v) { v.readColors(); v.draw(); });
     },

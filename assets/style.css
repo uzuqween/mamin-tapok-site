@@ -14,7 +14,10 @@
   --max:1240px;
   --display:'Unbounded','PT Sans',system-ui,sans-serif;
   --body:'PT Sans',system-ui,sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,'Cascadia Mono',monospace;
+  /* точечная гарнитура для машинного слоя: HUD, подписи моделей, кнопки
+     вьюпорта. её сетка из точек — та же логика, что у вокселя на канвасе,
+     поэтому подписи читаются как часть модели, а не как код в терминале */
+  --pixel:'Bitcount Prop Single','PT Sans',system-ui,sans-serif;
 }
 /* светлая половина: тот же графит, вывернутый наизнанку, янтарь притемнён —
    на белом он иначе не читается */
@@ -85,11 +88,16 @@ a{color:inherit;text-decoration:none}
 .skip{position:absolute;left:-9999px}
 .skip:focus{left:var(--pad);top:10px;z-index:20;background:var(--paper);padding:8px 12px;border:1px solid var(--ink)}
 
-/* ---------- служебный слой: всё, что не текст и не заголовок ---------- */
-.mark,.nav a,.sec__note,.tags li,.stage__hud,.stage__hint,.stage__tools button,
-.viewer__list button,.deal dt,.peek__cap,.card__play,.contact__list em,.skip,
-.hero__stage figcaption{
-  font-family:var(--mono);font-weight:500;
+/* ---------- два служебных слоя ----------
+   всё, что относится к самим моделям, набрано точками; навигация и кнопки —
+   тем же PT Sans, что и текст, только жирно и в разбивку. так «машинный»
+   голос остаётся у окон с моделями и не расползается по странице */
+.stage__hud,.stage__hint,.stage__tools button,.viewer__list button,
+.sec__note,.mark,.peek__cap{
+  font-family:var(--pixel);font-weight:500;
+}
+.nav a,.tags li,.deal dt,.card__play,.contact__list em,.skip{
+  font-family:var(--body);font-weight:700;
 }
 
 /* ---------- bar ---------- */
@@ -101,7 +109,7 @@ a{color:inherit;text-decoration:none}
   background:color-mix(in srgb,var(--paper) 88%,transparent);
   backdrop-filter:blur(8px);
 }
-.mark{display:flex;align-items:center;gap:9px;font-size:13px;letter-spacing:.04em}
+.mark{display:flex;align-items:center;gap:9px;font-size:15px;letter-spacing:.02em}
 .mark__cube{width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:1.4}
 .mark:hover .mark__cube{animation:tilt 1.2s ease infinite alternate}
 @keyframes tilt{to{transform:rotate(-12deg) translateY(-2px)}}
@@ -113,7 +121,7 @@ a{color:inherit;text-decoration:none}
 /* контакты в шапке — единственный янтарный элемент наверху, поэтому глаз
    находит его сразу и без размера кегля */
 .bar__cta{
-  font-family:var(--mono);font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  font-family:var(--body);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
   border:1px solid var(--accent);color:var(--accent);
   padding:7px 13px;transition:background .18s,color .18s;
 }
@@ -145,7 +153,7 @@ a{color:inherit;text-decoration:none}
 .hero__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
 .btn{
   border:1px solid var(--ink);padding:12px 20px;
-  font-family:var(--mono);font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  font-family:var(--body);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
   background:var(--ink);color:var(--paper);transition:transform .18s,box-shadow .18s;
 }
 .btn:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink)}
@@ -173,13 +181,13 @@ a{color:inherit;text-decoration:none}
   position:absolute;left:0;bottom:0;right:0;
   display:flex;flex-wrap:wrap;gap:2px 14px;
   padding:7px 10px;
-  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);
+  font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);
   border-top:1px solid var(--line);
   pointer-events:none;
 }
 .stage__hint{
   position:absolute;top:10px;right:12px;margin:0;
-  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);
   pointer-events:none;transition:opacity .3s;
 }
 .stage.is-touched .stage__hint{opacity:0}
@@ -188,7 +196,7 @@ a{color:inherit;text-decoration:none}
 .stage--big{aspect-ratio:auto;min-height:min(72vh,560px)}
 .stage__tools{position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:6px}
 .stage__tools button{
-  font:inherit;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  font:inherit;font-family:var(--pixel);font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;
   background:var(--paper);color:var(--ink);border:1px solid var(--ink);padding:5px 9px;cursor:pointer;
 }
 .stage__tools button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
@@ -197,7 +205,7 @@ a{color:inherit;text-decoration:none}
 section{max-width:var(--max);margin:0 auto;padding:clamp(46px,7vw,96px) var(--pad)}
 .sec__head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;margin-bottom:clamp(20px,3vw,36px)}
 .sec__head h2,.deal h2,.contact h2{font-size:clamp(24px,3.4vw,44px)}
-.sec__note{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.sec__note{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));border:1px solid var(--ink);border-width:1px 0 0 1px}
 .card{background:transparent;display:flex;flex-direction:column;border:1px solid var(--ink);border-width:0 1px 1px 0}
 .card__body{padding:18px}
@@ -214,7 +222,7 @@ section{max-width:var(--max);margin:0 auto;padding:clamp(46px,7vw,96px) var(--pa
 .viewer__box{display:grid;grid-template-columns:230px 1fr;border:1px solid var(--ink)}
 .viewer__list{list-style:none;margin:0;padding:0;background:transparent;display:flex;flex-direction:column;border-right:1px solid var(--ink)}
 .viewer__list button{
-  width:100%;text-align:left;font:inherit;font-family:var(--mono);font-size:13px;letter-spacing:.02em;
+  width:100%;text-align:left;font:inherit;font-family:var(--pixel);font-size:15px;letter-spacing:.01em;
   background:transparent;color:inherit;cursor:pointer;
   border:0;border-bottom:1px solid var(--line);padding:13px 15px;display:flex;gap:10px;align-items:baseline;
 }
@@ -262,7 +270,7 @@ section{max-width:var(--max);margin:0 auto;padding:clamp(46px,7vw,96px) var(--pa
 .peek__cap{
   display:block;padding:5px 8px;
   border-top:1px solid var(--line);
-  font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);
 }
 /* без наведения (телефон) — видео разворачивается в самой карточке по тапу */
 .card__vid{display:none}
@@ -335,15 +343,16 @@ section{max-width:var(--max);margin:0 auto;padding:clamp(46px,7vw,96px) var(--pa
   .nav{font-size:14px;gap:12px}
   .invert{padding:6px 8px}
   .hero h1{font-size:clamp(38px,12vw,60px)}
-  /* шапка в одну строку: моноширинный набор шире прежнего, поэтому
-     на узком экране жмём кегль и трекинг, а не только отступы */
-  .bar{gap:8px;padding:12px var(--pad)}
-  .mark{font-size:11px;letter-spacing:0;white-space:nowrap}
+  /* шапка в одну строку. точечная гарнитура на мелком кегле рассыпается,
+     поэтому марка держит 13px, а место освобождают трекинг и отступы */
+  .bar{gap:7px;padding:12px var(--pad)}
+  .mark{font-size:13px;letter-spacing:0;white-space:nowrap}
   .mark__cube{width:16px;height:16px}
-  .nav{font-size:9.5px;letter-spacing:.06em;gap:9px}
+  .nav{font-size:10px;letter-spacing:.04em;gap:8px}
+  .bar__cta{font-size:10px;letter-spacing:.04em;padding:6px 8px}
   .invert{padding:5px}
   .invert svg{width:15px;height:15px}
-  .stage__hint{letter-spacing:.08em;font-size:10px;left:12px;text-align:right}
+  .stage__hint{letter-spacing:.04em;font-size:11px;left:12px;text-align:right}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
